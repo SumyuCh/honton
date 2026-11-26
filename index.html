@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7fb">
+  <title>藥品資料庫 — DSQ</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17233c;
+      --muted: #748098;
+      --line: #e8ecf3;
+      --paper: #fff;
+      --canvas: #f5f7fb;
+      --navy: #17233c;
+      --blue: #4263eb;
+      --blue-soft: #edf1ff;
+      --green: #248a67;
+      --shadow: 0 12px 32px rgb(22 35 60 / 5%);
+      font-family: Inter, "Segoe UI", "Microsoft JhengHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+    }
+
+    button, input, select { font: inherit; }
+    button { color: inherit; }
+
+    .app-shell { min-height: 100vh; }
+
+    .topbar {
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 5.2vw;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(145deg, #5c7cfa, #4263eb);
+      border-radius: 12px;
+      box-shadow: 0 5px 12px rgb(66 99 235 / 20%);
+    }
+
+    .brand-mark svg { width: 21px; height: 21px; }
+    .brand-name { font-size: 15px; font-weight: 750; letter-spacing: -.02em; }
+    .brand-caption { margin-top: 2px; color: var(--muted); font-size: 11px; }
+
+    .topbar-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #64708a;
+      font-size: 12px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: #40b989;
+      border-radius: 50%;
+      box-shadow: 0 0 0 3px #e8f7f1;
+    }
+
+    main { width: min(1280px, 90vw); margin: 0 auto; padding: 43px 0 64px; }
+
+    .page-heading {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .12em;
+    }
+
+    h1 { margin: 0; font-size: clamp(25px, 3vw, 34px); letter-spacing: -.045em; }
+    .page-description { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
+
+    .export-button {
+      min-height: 40px;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 14px;
+      color: #34425e;
+      background: white;
+      border: 1px solid #dfe4ed;
+      border-radius: 9px;
+      box-shadow: 0 2px 4px rgb(25 38 62 / 3%);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 650;
+      transition: border-color .15s, background .15s, transform .15s;
+    }
+
+    .export-button:hover { background: #f9faff; border-color: #b7c4f7; transform: translateY(-1px); }
+    .export-button svg { width: 15px; height: 15px; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 15px;
+      margin-bottom: 23px;
+    }
+
+    .stat-card {
+      min-height: 105px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 21px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat-label { color: var(--muted); font-size: 12px; }
+    .stat-value { margin-top: 8px; font-size: 25px; font-weight: 740; letter-spacing: -.04em; }
+
+    .stat-icon {
+      width: 39px;
+      height: 39px;
+      display: grid;
+      place-items: center;
+      color: var(--blue);
+      background: var(--blue-soft);
+      border-radius: 11px;
+    }
+
+    .stat-card:nth-child(2) .stat-icon { color: #168566; background: #e9f7f1; }
+    .stat-card:nth-child(3) .stat-icon { color: #9a6b1b; background: #fff5df; }
+    .stat-icon svg { width: 19px; height: 19px; }
+
+    .directory {
+      overflow: hidden;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .directory-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 21px 23px 15px;
+    }
+
+    .directory-title { margin: 0; font-size: 15px; font-weight: 720; letter-spacing: -.02em; }
+    .directory-count { margin-left: 8px; color: #8a94a8; font-size: 11px; font-weight: 500; }
+    .controls { display: flex; align-items: center; gap: 10px; padding: 0 23px 17px; }
+
+    .search-wrap { position: relative; flex: 1; min-width: 150px; }
+    .search-wrap svg {
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      width: 15px;
+      height: 15px;
+      color: #929cb0;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .search-input, .sort-select {
+      height: 39px;
+      color: #33415c;
+      background: white;
+      border: 1px solid #e1e6ef;
+      border-radius: 8px;
+      outline: none;
+      font-size: 12px;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    .search-input { width: 100%; padding: 0 12px 0 36px; }
+    .search-input::placeholder { color: #a3acbb; }
+    .search-input:focus, .sort-select:focus { border-color: #96a9f6; box-shadow: 0 0 0 3px rgb(66 99 235 / 9%); }
+    .sort-select { min-width: 145px; padding: 0 30px 0 11px; }
+
+    .category-filters {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      padding: 0 23px 17px;
+      scrollbar-width: thin;
+    }
+
+    .filter-chip {
+      flex: 0 0 auto;
+      min-height: 29px;
+      padding: 0 11px;
+      color: #67748c;
+      background: #fff;
+      border: 1px solid #e6eaf1;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 11px;
+      transition: all .15s;
+    }
+
+    .filter-chip:hover { color: var(--blue); border-color: #c6d0fb; }
+    .filter-chip[aria-pressed="true"] { color: white; background: var(--navy); border-color: var(--navy); }
+
+    .table-scroll { overflow-x: auto; border-top: 1px solid #edf0f5; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    thead { background: #fafbfd; }
+    th { height: 39px; color: #8b95a8; font-size: 10px; font-weight: 650; letter-spacing: .025em; }
+    th, td { padding: 0 18px; }
+    th:first-child, td:first-child { padding-left: 23px; }
+    th:last-child, td:last-child { padding-right: 23px; }
+    td { height: 67px; border-top: 1px solid #f0f2f6; font-size: 12px; }
+    tbody tr { cursor: pointer; transition: background .12s; }
+    tbody tr:hover { background: #fafbff; }
+    tbody tr[aria-selected="true"] { background: #f5f7ff; }
+
+    .product-cell { min-width: 250px; }
+    .product-name { display: block; max-width: 420px; overflow: hidden; color: #24314c; font-size: 12px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .product-source { display: block; margin-top: 5px; overflow: hidden; color: #98a1b1; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+
+    .category-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 23px;
+      padding: 0 8px;
+      color: #4a5fba;
+      background: #f0f3ff;
+      border: 1px solid #e3e8ff;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .reference-cell { color: #45516a; font-variant-numeric: tabular-nums; }
+    .reference-number { color: #3c507c; font-weight: 630; }
+    .reference-count { color: #909aae; }
+    .date-cell { color: #66728a; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .open-detail { width: 28px; height: 28px; color: #9ba4b4; background: transparent; border: 0; border-radius: 7px; cursor: pointer; }
+    tr:hover .open-detail, tr[aria-selected="true"] .open-detail { color: var(--blue); background: #edf1ff; }
+    .open-detail svg { width: 15px; height: 15px; vertical-align: middle; }
+
+    .empty-state { padding: 48px 20px; color: var(--muted); text-align: center; font-size: 12px; }
+    .table-footer { padding: 12px 23px; color: #929bad; border-top: 1px solid #edf0f5; font-size: 10px; }
+
+    .detail-panel {
+      position: fixed;
+      z-index: 4;
+      inset: 0 0 0 auto;
+      width: min(440px, 100%);
+      overflow-y: auto;
+      background: white;
+      box-shadow: -16px 0 45px rgb(23 35 60 / 12%);
+      transform: translateX(105%);
+      transition: transform .24s ease;
+    }
+
+    .detail-panel.is-open { transform: translateX(0); }
+    .detail-backdrop { position: fixed; z-index: 3; inset: 0; background: rgb(18 28 48 / 25%); opacity: 0; pointer-events: none; transition: opacity .2s; }
+    .detail-backdrop.is-open { opacity: 1; pointer-events: auto; }
+    .detail-top { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px; border-bottom: 1px solid var(--line); }
+    .detail-label { color: #8b95a8; font-size: 10px; font-weight: 700; letter-spacing: .1em; }
+    .close-detail { width: 32px; height: 32px; display: grid; place-items: center; color: #6f7a90; background: #f5f6f9; border: 0; border-radius: 8px; cursor: pointer; }
+    .close-detail svg { width: 16px; height: 16px; }
+    .detail-content { padding: 25px 22px 40px; }
+    .detail-title { margin: 11px 0 12px; font-size: 22px; line-height: 1.4; letter-spacing: -.04em; }
+    .detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .detail-section { margin-top: 29px; }
+    .detail-section h3 { margin: 0 0 11px; color: #7e899d; font-size: 10px; font-weight: 700; letter-spacing: .08em; }
+    .record-list { display: grid; gap: 9px; }
+    .record-card { padding: 14px; background: #fafbfd; border: 1px solid #edf0f5; border-radius: 10px; }
+    .record-main { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .record-id { color: #2f4167; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .record-date { color: #69758b; font-size: 11px; white-space: nowrap; }
+    .record-note { margin-top: 7px; color: #8993a5; font-size: 10px; }
+    .source-name { color: #77839a; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; }
+    .detail-empty { display: grid; min-height: 100%; place-items: center; padding: 36px; color: #9aa3b3; text-align: center; font-size: 12px; }
+    .detail-empty-mark { width: 45px; height: 45px; display: grid; place-items: center; margin: 0 auto 13px; color: #7285dc; background: #f0f3ff; border-radius: 14px; }
+    .detail-empty-mark svg { width: 21px; height: 21px; }
+
+    .footer-note { margin-top: 15px; color: #9aa3b2; font-size: 10px; text-align: right; }
+
+    @media (max-width: 760px) {
+      .topbar { height: 64px; padding: 0 5vw; }
+      .topbar-note { font-size: 0; }
+      .topbar-note .live-dot { margin-right: 2px; }
+      main { width: 90vw; padding-top: 31px; }
+      .page-heading { align-items: flex-start; }
+      .page-description { max-width: 380px; line-height: 1.6; }
+      .stats { gap: 9px; }
+      .stat-card { min-height: 91px; padding: 14px 12px; }
+      .stat-label { font-size: 10px; }
+      .stat-value { font-size: 21px; }
+      .stat-icon { width: 32px; height: 32px; }
+      .stat-icon svg { width: 16px; height: 16px; }
+      .directory-heading { padding: 17px 15px 13px; }
+      .controls, .category-filters { padding-right: 15px; padding-left: 15px; }
+      .sort-select { min-width: 112px; max-width: 120px; }
+      th, td { padding-right: 12px; padding-left: 12px; }
+      th:first-child, td:first-child { padding-left: 15px; }
+      th:last-child, td:last-child { padding-right: 15px; }
+      .table-footer { padding-right: 15px; padding-left: 15px; }
+    }
+
+    @media (max-width: 480px) {
+      .page-heading { flex-direction: column; gap: 17px; }
+      .export-button { min-height: 36px; }
+      .stat-icon { display: none; }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .stat-card { align-items: flex-start; }
+      .controls { align-items: stretch; flex-direction: column; }
+      .search-wrap { flex: initial; }
+      .sort-select { width: 100%; max-width: none; }
+      .detail-panel { width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><rect x="4" y="4" width="16" height="16" rx="4"/></svg>
+        </div>
+        <div>
+          <div class="brand-name">DSQ 藥品資料庫</div>
+          <div class="brand-caption">藥品資料管理系統</div>
+        </div>
+      </div>
+      <div class="topbar-note"><span class="live-dot"></span>本機資料 · 無需連線</div>
+    </header>
+
+    <main>
+      <section class="page-heading" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">MEDICINE DIRECTORY</p>
+          <h1 id="page-title">藥品管制資料庫</h1>
+          <p class="page-description">集中瀏覽藥品品項、分類與參考紀錄，快速找到需要的資料。</p>
+        </div>
+        <button class="export-button" id="export-button" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+          匯出 CSV
+        </button>
+      </section>
+
+      <section class="stats" aria-label="資料摘要">
+        <article class="stat-card">
+          <div><div class="stat-label">藥品品項</div><div class="stat-value" id="product-count">—</div></div>
+          <div class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 3.5 10 10a3.54 3.54 0 0 1-5 5l-10-10a3.54 3.54 0 0 1 5-5Z"/><path d="m8 6 10 10"/></svg></div>
+        </article>
+        <article class="stat-card">
+          <div><div class="stat-label">參考紀錄</div><div class="stat-value" id="record-count">—</div></div>
+          <div class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8l-5-5H8Z"/><path d="M14 3v6h6M8 13h8m-8 4h8"/></svg></div>
+        </article>
+        <article class="stat-card">
+          <div><div class="stat-label">資料分類</div><div class="stat-value" id="category-count">—</div></div>
+          <div class="stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="8" cy="5" r="2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="19" r="2" fill="currentColor" stroke="none"/></svg></div>
+        </article>
+      </section>
+
+      <section class="directory" aria-labelledby="directory-title">
+        <div class="directory-heading">
+          <h2 class="directory-title" id="directory-title">藥品目錄 <span class="directory-count" id="directory-count"></span></h2>
+        </div>
+        <div class="controls">
+          <label class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input class="search-input" id="search-input" type="search" placeholder="搜尋藥品、編號或來源檔案…" autocomplete="off" aria-label="搜尋藥品、編號或來源檔案">
+          </label>
+          <select class="sort-select" id="sort-select" aria-label="排序方式">
+            <option value="name">按藥品名稱</option>
+            <option value="date-desc">按日期（新至舊）</option>
+            <option value="date-asc">按日期（舊至新）</option>
+            <option value="category">按分類</option>
+          </select>
+        </div>
+        <nav class="category-filters" id="category-filters" aria-label="按分類篩選"></nav>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th scope="col">藥品資料</th><th scope="col">分類</th><th scope="col">參考編號</th><th scope="col">日期</th><th scope="col" aria-label="詳細資料"></th></tr>
+            </thead>
+            <tbody id="product-rows"></tbody>
+          </table>
+          <div class="empty-state" id="empty-state" hidden>找不到符合條件的品項，請調整搜尋關鍵字或分類。</div>
+        </div>
+        <div class="table-footer" id="table-footer"></div>
+      </section>
+      <p class="footer-note">資料整理自 DSQ 資料夾內的 Excel 活頁簿；日期依原始表格記錄呈現。</p>
+    </main>
+  </div>
+
+  <div class="detail-backdrop" id="detail-backdrop"></div>
+  <aside class="detail-panel" id="detail-panel" aria-label="藥品詳細資料" aria-hidden="true">
+    <div class="detail-top">
+      <span class="detail-label">品項詳細資料</span>
+      <button class="close-detail" id="close-detail" type="button" aria-label="關閉詳細資料">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m18 6-12 12M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="detail-content" id="detail-content"></div>
+  </aside>
+
+  <script type="application/json" id="database-data">
+[
+  {"id":"acyclovir-cream-5g","name":"Acyclovir Cream 5% 5g (HK-41418)","category":"DP","source":"Acy Cream 5g _Disciplinary Protection (DP).xlsx","records":[{"reference":"","date":"2026-04-21","note":"原表格只記錄日期，未提供參考編號。"}]},
+  {"id":"acyclovir-cream-2g","name":"Acyclovir Cream 5% 2g (HK-41418)","category":"DHPS SQ /DQS","source":"Acy Cream 5g _Disciplinary Protection (DP).xlsx","records":[{"reference":"DHPS  57/17","date":"2017-10-13"},{"reference":"SQ19-437","date":"2020-05-15"},{"reference":"DHPS 29/20","date":"2020-07-03"},{"reference":"DSQ22-238","date":"2024-04-16"},{"reference":"DSQ24-227","date":"2024-02-10"}]},
+  {"id":"aztreonam-injection-1g","name":"Aztreonam Injection 1g","category":"DQ","source":"Aztreonam.xlsx","records":[{"reference":"DQ26-030","date":"2026-04-29"},{"reference":"DQ26-41","date":"2026-04-30"},{"reference":"DQ26-134","date":"2026-07-06"},{"reference":"DQ26-246","date":"2026-09-08"},{"reference":"DQ26-322","date":"2026-11-03"}]},
+  {"id":"bupivacaine-injection-4ml","name":"Bupivacaine HCL 0.5% + Glucose 8% Injection 4ml","category":"DQ","source":"Bupivacaine HCL 0.5%.xlsx","records":[{"reference":"DQ26-308","date":"2026-10-21"}]},
+  {"id":"bupropion-tablet-150mg","name":"Bupropion HCI SR Tablet 150mg","category":"DQ","source":"Bupropion.xlsx","records":[{"reference":"DQ26-279","date":"2026-09-29","note":"Swiss Pharmaceutical"},{"reference":"DQ26-279","date":"2026-09-29","note":"Sun"}]},
+  {"id":"cefiderocol-infusion-1g","name":"Cefiderocol (Sulphate Tosylate) Infusion 1g","category":"DQ","source":"Cefiderocol.xlsx","records":[{"reference":"DQ26-111","date":"2026-06-25"},{"reference":"DQ26-206","date":"2026-08-13"},{"reference":"DQ26-296","date":"2026-10-21"},{"reference":"DQ26-309","date":"2026-10-26"},{"reference":"DQ26-310","date":"2026-10-28"}]},
+  {"id":"cholestyramine-granules-4g","name":"Cholestyramine (Sugar free) Granules 4g / sachet","category":"DST","source":"Cholestyramine -DST.xlsx","records":[{"reference":"DST26-009","date":"2026-08-05"}]},
+  {"id":"dacarbazine-injection-200mg","name":"Dacarbazine Injection 200mg","category":"DQ","source":"Dacarbazine.xlsx","records":[{"reference":"DQ26-300","date":"2026-10-22"}]},
+  {"id":"desogestrel-tablet-75mcg","name":"Desogestrel Tab 75mcg","category":"DQ","source":"Desogestrel.xlsx","records":[{"reference":"DQ26-050","date":"2026-05-07"}]},
+  {"id":"dexmedetomidine-infusion","name":"Dexmedetomidine (HCI) infusion 100mcg/ml 2ml","category":"DQ","source":"Dexmedetomidine.xlsx","records":[{"reference":"DQ26-082","date":"2026-06-02"}]},
+  {"id":"digoxin-injection-40mg","name":"Digoxin Immune Fab (Ovine) Injection 40mg","category":"DQ/DST","source":"Digoxin.xlsx","records":[{"reference":"DQ26-037","date":"2026-05-08"},{"reference":"DST26-006","date":"2026-07-15"}]},
+  {"id":"duloxetine-capsule-60mg","name":"Duloxetine(HCL) Delayed Release Capsule 60mg","category":"DQ","source":"Duloxetine 60mg.xlsx","records":[{"reference":"DQ26-193","date":"2026-08-06"}]},
+  {"id":"enoxaparin-injection-40mg","name":"Enoxaparin Sodium Injection 40mg","category":"DQ","source":"Enoxaparin Inj .xlsx","records":[{"reference":"DQ26-052","date":"2026-05-13"}]},
+  {"id":"enoxaparin-syringe-60mg","name":"Enoxaparin Sodium Prefilled Syringe 60mg/0.6ml","category":"DQ","source":"Enoxaparin Syringe .xlsx","records":[{"reference":"DQ26-097","date":"2026-06-15"},{"reference":"DQ26-137","date":"2026-07-03"}]},
+  {"id":"enoxaparin-syringe-40mg","name":"Enoxaparin Sodium Prefilled Syringe 40mg/0.4ml","category":"DQ","source":"Enoxaparin Syringe .xlsx","records":[{"reference":"DQ26-135","date":"2026-07-03"}]},
+  {"id":"ferrum-hausmann-syrup","name":"Ferrum Hausmann (or equiv) Syrup 50mg Fe/5ml","category":"DSQ","source":"Ferrum Syrup _DSQ.xlsx","records":[{"reference":"DSQ24-125","date":"2024-12-04"},{"reference":"DSQ26-084","date":"2026-09-24"}]},
+  {"id":"fomepizole-injection","name":"Fomepizole Injection 1g/ml 1.5ml","category":"DQ","source":"Fomepizole.xlsx","records":[{"reference":"DQ26-089","date":"2026-06-16"}]},
+  {"id":"ganciclovir-eye-gel","name":"Ganciclovir Eye Gel 1.5mg/g 5g","category":"DSQ","source":"Ganciclovir Eye _DSQ.xlsx","records":[{"reference":"DSQ26-104","date":"2026-10-14"}]},
+  {"id":"heparin-sodium-injection","name":"Heparin Sodium injection, 25,000U in 5ml","category":"DQ","source":"Heparin.xlsx","records":[{"reference":"DQ26-028","date":"2026-04-28"}]},
+  {"id":"ketorolac-injection","name":"Ketorolac Trometamol Injection 30mg/ml 1ml","category":"DQ","source":"Ketorolac.xlsx","records":[{"reference":"DQ26-094","date":"2026-06-10"}]},
+  {"id":"nelarabine-infusion-250mg","name":"Nelarabine Infusion 250mg","category":"DQ","source":"Nelarabine infusion 250mg .xlsx","records":[{"reference":"DQ26-106","date":"2026-06-18"}]},
+  {"id":"olanzapine-tablet-10mg","name":"Olanzapine orodispersible Tablet 10mg","category":"DQ","source":"Olanzapine orodispersible 10mg.xlsx","records":[{"reference":"DQ26-353","date":"2026-11-20"}]},
+  {"id":"paclitaxel-injection-100mg","name":"Paclitaxel Injection 100mg","category":"DQ","source":"Paclitaxel Inj 100mg.xlsx","records":[{"reference":"DQ26-149","date":"2026-07-14"}]},
+  {"id":"phosphate-tablet","name":"Phosphate Sandoz (or equiv) Effer Tablet","category":"DQ","source":"Phosphate.xlsx","records":[{"reference":"DQ26-055","date":"2026-05-08"},{"reference":"DQ26-077","date":"2026-06-01"}]},
+  {"id":"pizotifen-tablet-0-5mg","name":"Pizotifen Hydrogen Malate Tablet 0.5mg","category":"DQ","source":"Pizotifen 0.5mg.xlsx","records":[{"reference":"DQ26-184","date":"2026-07-29"}]},
+  {"id":"ropinirole-tablet-2mg","name":"Ropinirole (Hydrochloride) Prolonged Release Tablet 2mg","category":"DQ","source":"Ropinirote.xlsx","records":[{"reference":"DQ26-361","date":"2026-11-24"}]},
+  {"id":"sargramostim-injection-250mcg","name":"Sargramostim (Leukine) Injection 250mcg","category":"DQ","source":"Sargramostim  .xlsx","records":[{"reference":"DQ26-045","date":"2026-05-05"},{"reference":"DQ26-064","date":"2026-05-14"}]},
+  {"id":"sinemet-tablet-50-200","name":"Sinemet 50/200 (or equiv) CR Tablet","category":"DQ","source":"Sinemet 50200.xlsx","records":[{"reference":"DQ26-002","date":"2026-04-13"},{"reference":"DQ26-217","date":"2026-08-20"}]},
+  {"id":"stiripentol-capsule-250mg","name":"STIRIPENTOL CAPSULE 250MG","category":"DSQ","source":"STIRIPENTOL.xlsx","records":[{"reference":"DSQ25-284","date":"2026-04-01"}]},
+  {"id":"sodium-succimer-capsule-200mg","name":"Sodium Succimer Capsule 200mg","category":"DQ","source":"Succimer .xlsx","records":[{"reference":"DQ26-232","date":"2026-08-21"}]},
+  {"id":"suspension-1g-sachet","name":"Suspension 1g/Sachet","category":"DQ","source":"Suspension.xlsx","records":[{"reference":"DQ26-170","date":"2026-07-28"}]},
+  {"id":"terbinafine-cream-1-percent","name":"Terbinafine HCI Cream 1%","category":"DQ","source":"Terbinafine.xlsx","records":[{"reference":"DQ26-074","date":"2026-05-28"}]},
+  {"id":"thyroxine-injection-200mcg","name":"Thyroxine Sodium Levo Injection 200mcg/ml 1ml","category":"DQ","source":"Thyroxine .xlsx","records":[{"reference":"DQ26-267","date":"2026-09-21"}]},
+  {"id":"topotecan-injection-4mg","name":"Topotecan Injection 4mg","category":"DQ","source":"Topotecan Inj 4mg.xlsx","records":[{"reference":"DQ26-015","date":"2026-04-23"},{"reference":"DQ26-177","date":"2026-07-28"}]},
+  {"id":"vancomycin-injection-500mg","name":"Vancomycin (HCI) Injection 500mg","category":"DQ","source":"Vancomycin.xlsx","records":[{"reference":"DQ26-141","date":"2026-07-10"},{"reference":"DQ26-336","date":"2026-11-06"}]},
+  {"id":"xacduro-infusion-1g-1g","name":"Xacduro (or equiv) infusion 1g/1g","category":"DQ","source":"Xacduro.xlsx","records":[{"reference":"DQ26-367","date":"2026-11-26"}]}
+]
+  </script>
+  <script>
+    (() => {
+      "use strict";
+
+      const products = JSON.parse(document.getElementById("database-data").textContent);
+      const rowsElement = document.getElementById("product-rows");
+      const searchElement = document.getElementById("search-input");
+      const sortElement = document.getElementById("sort-select");
+      const filterElement = document.getElementById("category-filters");
+      const emptyElement = document.getElementById("empty-state");
+      const detailPanel = document.getElementById("detail-panel");
+      const detailContent = document.getElementById("detail-content");
+      const detailBackdrop = document.getElementById("detail-backdrop");
+      const formatter = new Intl.DateTimeFormat("zh-HK", { year: "numeric", month: "2-digit", day: "2-digit" });
+      let activeCategory = "全部";
+      let selectedId = null;
+
+      const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+
+      const formatDate = (date) => date ? formatter.format(new Date(`${date}T00:00:00`)) : "—";
+      const mostRecentDate = (product) => product.records.reduce((latest, record) => record.date > latest ? record.date : latest, "");
+      const allCategories = [...new Set(products.map((product) => product.category))].sort((a, b) => a.localeCompare(b));
+
+      document.getElementById("product-count").textContent = products.length;
+      document.getElementById("record-count").textContent = products.reduce((sum, product) => sum + product.records.length, 0);
+      document.getElementById("category-count").textContent = allCategories.length;
+
+      const renderFilters = () => {
+        const categories = ["全部", ...allCategories];
+        filterElement.innerHTML = categories.map((category) => `
+          <button type="button" class="filter-chip" data-category="${escapeHtml(category)}" aria-pressed="${category === activeCategory}">
+            ${escapeHtml(category)}
+          </button>`).join("");
+      };
+
+      const matchingProducts = () => {
+        const query = searchElement.value.trim().toLocaleLowerCase();
+        const filtered = products.filter((product) => {
+          const matchesCategory = activeCategory === "全部" || product.category === activeCategory;
+          const searchable = [
+            product.name, product.category, product.source,
+            ...product.records.flatMap((record) => [record.reference, record.note || ""])
+          ].join(" ").toLocaleLowerCase();
+          return matchesCategory && (!query || searchable.includes(query));
+        });
+
+        const sort = sortElement.value;
+        return filtered.sort((a, b) => {
+          if (sort === "date-desc") return mostRecentDate(b).localeCompare(mostRecentDate(a)) || a.name.localeCompare(b.name);
+          if (sort === "date-asc") return mostRecentDate(a).localeCompare(mostRecentDate(b)) || a.name.localeCompare(b.name);
+          if (sort === "category") return a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
+          return a.name.localeCompare(b.name);
+        });
+      };
+
+      const showDetail = (product) => {
+        selectedId = product.id;
+        detailContent.innerHTML = `
+          <span class="category-tag">${escapeHtml(product.category)}</span>
+          <h2 class="detail-title">${escapeHtml(product.name)}</h2>
+          <div class="detail-meta"><span class="reference-count">${product.records.length} 筆參考紀錄</span></div>
+          <section class="detail-section">
+            <h3>參考紀錄</h3>
+            <div class="record-list">${product.records.map((record) => `
+              <article class="record-card">
+                <div class="record-main">
+                  <span class="record-id">${record.reference ? escapeHtml(record.reference) : "未提供編號"}</span>
+                  <time class="record-date" datetime="${escapeHtml(record.date)}">${formatDate(record.date)}</time>
+                </div>
+                ${record.note ? `<div class="record-note">${escapeHtml(record.note)}</div>` : ""}
+              </article>`).join("")}
+            </div>
+          </section>
+          <section class="detail-section">
+            <h3>來源檔案</h3>
+            <div class="source-name">${escapeHtml(product.source)}</div>
+          </section>`;
+        detailPanel.classList.add("is-open");
+        detailBackdrop.classList.add("is-open");
+        detailPanel.setAttribute("aria-hidden", "false");
+        renderRows();
+        document.getElementById("close-detail").focus();
+      };
+
+      const closeDetail = () => {
+        detailPanel.classList.remove("is-open");
+        detailBackdrop.classList.remove("is-open");
+        detailPanel.setAttribute("aria-hidden", "true");
+        selectedId = null;
+        renderRows();
+      };
+
+      const renderRows = () => {
+        const visible = matchingProducts();
+        document.getElementById("directory-count").textContent = `${visible.length} / ${products.length} 項`;
+        document.getElementById("table-footer").textContent = `顯示 ${visible.length} 個品項 · 日期按原始資料記錄`;
+        emptyElement.hidden = visible.length > 0;
+        rowsElement.innerHTML = visible.map((product) => {
+          const references = product.records.filter((record) => record.reference);
+          const latest = mostRecentDate(product);
+          const firstReference = references[0]?.reference || "未提供編號";
+          const extraCount = references.length > 1 ? ` · +${references.length - 1}` : "";
+          return `<tr tabindex="0" role="button" aria-label="查看 ${escapeHtml(product.name)} 詳細資料" aria-selected="${product.id === selectedId}" data-id="${escapeHtml(product.id)}">
+            <td class="product-cell"><span class="product-name" title="${escapeHtml(product.name)}">${escapeHtml(product.name)}</span><span class="product-source" title="${escapeHtml(product.source)}">${escapeHtml(product.source)}</span></td>
+            <td><span class="category-tag">${escapeHtml(product.category)}</span></td>
+            <td class="reference-cell"><span class="reference-number">${escapeHtml(firstReference)}</span><span class="reference-count">${escapeHtml(extraCount)}</span></td>
+            <td class="date-cell">${formatDate(latest)}</td>
+            <td><button class="open-detail" type="button" tabindex="-1" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button></td>
+          </tr>`;
+        }).join("");
+      };
+
+      filterElement.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-category]");
+        if (!button) return;
+        activeCategory = button.dataset.category;
+        renderFilters();
+        renderRows();
+      });
+
+      rowsElement.addEventListener("click", (event) => {
+        const row = event.target.closest("tr[data-id]");
+        if (!row) return;
+        const product = products.find((item) => item.id === row.dataset.id);
+        if (product) showDetail(product);
+      });
+
+      rowsElement.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        const row = event.target.closest("tr[data-id]");
+        if (!row) return;
+        event.preventDefault();
+        const product = products.find((item) => item.id === row.dataset.id);
+        if (product) showDetail(product);
+      });
+
+      searchElement.addEventListener("input", renderRows);
+      sortElement.addEventListener("change", renderRows);
+      document.getElementById("close-detail").addEventListener("click", closeDetail);
+      detailBackdrop.addEventListener("click", closeDetail);
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && detailPanel.classList.contains("is-open")) closeDetail();
+      });
+
+      document.getElementById("export-button").addEventListener("click", () => {
+        const exported = matchingProducts().flatMap((product) => product.records.map((record) => [
+          product.name, product.category, record.reference, record.date, record.note || "", product.source
+        ]));
+        const csvEscape = (value) => `"${String(value).replace(/"/g, '""')}"`;
+        const lines = [
+          ["藥品名稱", "分類", "參考編號", "日期", "備註", "來源檔案"].map(csvEscape).join(","),
+          ...exported.map((record) => record.map(csvEscape).join(","))
+        ];
+        const blob = new Blob(["\uFEFF", lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "DSQ-藥品資料.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+
+      renderFilters();
+      renderRows();
+    })();
+  </script>
+</body>
+</html>
